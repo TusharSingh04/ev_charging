@@ -4,6 +4,11 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
+// Helper function to convert UTC date to IST
+function toIST(date) {
+  return new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+}
+
 // Register a new user
 router.post('/register', async (req, res) => {
   try {
@@ -31,12 +36,12 @@ router.post('/register', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const obj = user.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    delete obj.password;
     res.status(201).json({
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role
-      },
+      user: obj,
       token
     });
   } catch (error) {
@@ -68,12 +73,12 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const obj = user.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    delete obj.password;
     res.json({
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role
-      },
+      user: obj,
       token
     });
   } catch (error) {
@@ -85,7 +90,11 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
+    const obj = user.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    delete obj.password;
+    res.json(obj);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -104,7 +113,11 @@ router.patch('/me', auth, async (req, res) => {
   try {
     updates.forEach(update => req.user[update] = req.body[update]);
     await req.user.save();
-    res.json(req.user);
+    const obj = req.user.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    delete obj.password;
+    res.json(obj);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

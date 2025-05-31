@@ -3,12 +3,20 @@ const router = express.Router();
 const ChargingStation = require('../models/ChargingStation');
 const auth = require('../middleware/auth');
 
+// Helper function to convert UTC date to IST
+function toIST(date) {
+  return new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+}
+
 // Create a new charging station
 router.post('/', auth, async (req, res) => {
   try {
     const chargingStation = new ChargingStation(req.body);
     await chargingStation.save();
-    res.status(201).json(chargingStation);
+    const obj = chargingStation.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    res.status(201).json(obj);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -18,7 +26,13 @@ router.post('/', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const chargingStations = await ChargingStation.find({});
-    res.json(chargingStations);
+    const stationsWithIST = chargingStations.map(station => {
+      const obj = station.toObject();
+      obj.createdAt = toIST(obj.createdAt);
+      obj.updatedAt = toIST(obj.updatedAt);
+      return obj;
+    });
+    res.json(stationsWithIST);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -31,7 +45,10 @@ router.get('/:id', auth, async (req, res) => {
     if (!chargingStation) {
       return res.status(404).json({ error: 'Charging station not found' });
     }
-    res.json(chargingStation);
+    const obj = chargingStation.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    res.json(obj);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -55,7 +72,10 @@ router.patch('/:id', auth, async (req, res) => {
 
     updates.forEach(update => chargingStation[update] = req.body[update]);
     await chargingStation.save();
-    res.json(chargingStation);
+    const obj = chargingStation.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    res.json(obj);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -68,7 +88,10 @@ router.delete('/:id', auth, async (req, res) => {
     if (!chargingStation) {
       return res.status(404).json({ error: 'Charging station not found' });
     }
-    res.json(chargingStation);
+    const obj = chargingStation.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    res.json(obj);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
