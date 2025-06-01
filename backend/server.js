@@ -35,7 +35,11 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 // MongoDB Connection with better options
+<<<<<<< HEAD
 mongoose.connect(process.env.MONGODB_URI, {
+=======
+mongoose.connect('mongodb+srv://22ucs218:<db_password>@cluster0.e1mmq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+>>>>>>> 20514f70e816b8cec2680d3dfdd9bbfba0602e09
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverSelectionTimeoutMS: 5000,
@@ -74,5 +78,10 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
+<<<<<<< HEAD
   console.log(`Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 }); 
+=======
+  console.log(`Server is running on port ${PORT}`);
+}); 
+>>>>>>> 20514f70e816b8cec2680d3dfdd9bbfba0602e09
