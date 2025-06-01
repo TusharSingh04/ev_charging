@@ -64,6 +64,13 @@
     </div>
     
     <div v-else>
+      <!-- Map View -->
+      <ChargerMap 
+        :stations="filteredStations"
+        :center="mapCenter"
+        :zoom="mapZoom"
+      />
+
       <!-- Desktop Table View -->
       <table v-if="!isMobile" class="charger-table">
         <thead>
@@ -176,14 +183,32 @@
         </div>
       </div>
     </div>
+
+    <!-- Add this before the closing div of charger-list-container -->
+    <div v-if="selectedStation" class="modal-overlay" @click="closeDetails">
+      <div class="modal-content" @click.stop>
+        <ChargerDetails 
+          :station="selectedStation"
+          @close="closeDetails"
+          @booking-success="handleBookingSuccess"
+          @status-updated="handleStatusUpdated"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import ChargerMap from './ChargerMap.vue'
+import ChargerDetails from './ChargerDetails.vue'
 
 export default {
   name: 'ChargerList',
+  components: {
+    ChargerMap,
+    ChargerDetails
+  },
   data() {
     return {
       stations: [],
@@ -197,7 +222,13 @@ export default {
       powerFilter: '',
       sortKey: 'name',
       sortOrder: 'asc',
-      refreshInterval: null
+      refreshInterval: null,
+      mapCenter: {
+        lat: 20.5937, // Default center (India)
+        lng: 78.9629
+      },
+      mapZoom: 5,
+      selectedStation: null
     }
   },
   computed: {
@@ -308,8 +339,18 @@ export default {
       return new Date(date).toLocaleString()
     },
     viewDetails(station) {
-      // TODO: Implement station details view
-      console.log('View details for station:', station)
+      this.selectedStation = station
+    },
+    closeDetails() {
+      this.selectedStation = null
+    },
+    handleBookingSuccess() {
+      this.selectedStation = null
+      this.fetchStations()
+    },
+    handleStatusUpdated() {
+      this.selectedStation = null
+      this.fetchStations()
     },
     handleReLogin() {
       localStorage.removeItem('token')
@@ -708,5 +749,27 @@ th {
   display: flex;
   gap: 0.5rem;
   margin-top: 1rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 </style> 

@@ -4,13 +4,14 @@
       <router-link to="/">EV Charging</router-link>
     </div>
     <div class="nav-links" :class="{ 'mobile-menu': isMobile, 'show': showMobileMenu }">
-      <template v-if="isAuthenticated">
+      <template v-if="isAuthenticated && !isAuthPage">
         <router-link to="/chargers" @click="closeMobileMenu">Charging Stations</router-link>
         <a href="#" @click.prevent="handleLogout" class="logout-btn" @click="closeMobileMenu">Logout</a>
       </template>
-      <template v-else>
+      <template v-else-if="!isAuthPage">
         <router-link to="/login" @click="closeMobileMenu">Login</router-link>
       </template>
+      <a href="#" class="help-btn" @click.prevent="closeMobileMenu">Need Help</a>
     </div>
     <button v-if="isMobile" class="menu-toggle" @click="toggleMobileMenu">
       <span></span>
@@ -32,6 +33,9 @@ export default {
   computed: {
     isAuthenticated() {
       return !!localStorage.getItem('token')
+    },
+    isAuthPage() {
+      return this.$route.path === '/login'
     }
   },
   methods: {
@@ -79,6 +83,11 @@ export default {
   text-decoration: none;
   font-size: 1.5rem;
   font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.nav-brand a:hover {
+  color: #3498db;
 }
 
 .nav-links {
@@ -126,6 +135,19 @@ export default {
   background-color: white;
   border-radius: 3px;
   transition: all 0.3s ease;
+}
+
+.help-btn {
+  background-color: #3498db;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.help-btn:hover {
+  background-color: #2980b9;
 }
 
 @media (max-width: 768px) {
