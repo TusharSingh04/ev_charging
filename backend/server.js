@@ -12,12 +12,10 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 // MongoDB Connection with better options
-mongoose.connect('mongodb://127.0.0.1:27017/ev_charging', {
+mongoose.connect('mongodb+srv://22ucs218:tushar0412@cluster0.e1mmq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-})
+  useUnifiedTopology: true
+});
 .then(() => {
   console.log('MongoDB connected successfully');
 })
