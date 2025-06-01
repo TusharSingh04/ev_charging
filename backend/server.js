@@ -5,7 +5,8 @@ const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 
