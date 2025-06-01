@@ -3,15 +3,25 @@
     <h1>Welcome to EV Charging Station</h1>
     <p>Find and manage charging stations near you</p>
     <div class="cta-buttons">
-      <router-link to="/login" class="login-btn">Login</router-link>
-      <router-link to="/chargers" class="view-stations-btn">View Stations</router-link>
+      <template v-if="isAuthenticated">
+        <router-link to="/chargers" class="view-stations-btn">View Stations</router-link>
+      </template>
+      <template v-else>
+        <router-link to="/login" class="login-btn">Login</router-link>
+        <router-link to="/register" class="register-btn">Register</router-link>
+      </template>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'HomeView'
+  name: 'HomeView',
+  computed: {
+    isAuthenticated() {
+      return !!localStorage.getItem('token')
+    }
+  }
 }
 </script>
 
@@ -60,7 +70,7 @@ p {
   margin-top: 1rem;
 }
 
-.login-btn, .view-stations-btn {
+.login-btn, .register-btn, .view-stations-btn {
   padding: 0.75rem 2rem;
   border-radius: 4px;
   text-decoration: none;
@@ -75,12 +85,17 @@ p {
   color: white;
 }
 
+.register-btn {
+  background: linear-gradient(45deg, #2196F3, #1976D2);
+  color: white;
+}
+
 .view-stations-btn {
   background: linear-gradient(45deg, #2196F3, #1976D2);
   color: white;
 }
 
-.login-btn:hover, .view-stations-btn:hover {
+.login-btn:hover, .register-btn:hover, .view-stations-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -92,7 +107,7 @@ p {
     max-width: 300px;
   }
 
-  .login-btn, .view-stations-btn {
+  .login-btn, .register-btn, .view-stations-btn {
     width: 100%;
     text-align: center;
   }

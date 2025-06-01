@@ -104,9 +104,15 @@ import axios from 'axios'
 
 export default {
   name: 'Login',
+  props: {
+    initialMode: {
+      type: String,
+      default: 'login'
+    }
+  },
   data() {
     return {
-      isLogin: true,
+      isLogin: this.initialMode === 'login',
       email: '',
       password: '',
       registerEmail: '',
@@ -123,17 +129,25 @@ export default {
       }
     }
   },
+  watch: {
+    initialMode(newMode) {
+      this.isLogin = newMode === 'login'
+    }
+  },
   methods: {
     toggleForm() {
-      this.isLogin = !this.isLogin;
-      this.error = null; // Clear errors when toggling
-      this.validationErrors = { // Clear validation errors
+      this.isLogin = !this.isLogin
+      this.error = null
+      this.validationErrors = {
         email: '',
         password: '',
         registerEmail: '',
         registerPassword: '',
         registerConfirmPassword: ''
-      };
+      }
+      // Update route when toggling form
+      const newRoute = this.isLogin ? '/login' : '/register'
+      this.$router.push(newRoute)
     },
     validateLoginForm() {
       let isValid = true

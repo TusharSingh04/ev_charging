@@ -15,6 +15,12 @@ const routes = [
     component: Login
   },
   {
+    path: '/register',
+    name: 'register',
+    component: Login,
+    props: { initialMode: 'register' }
+  },
+  {
     path: '/chargers',
     name: 'chargers',
     component: ChargerList,

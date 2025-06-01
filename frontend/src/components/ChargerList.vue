@@ -270,11 +270,13 @@ export default {
       
       this.loading = true
       this.error = null
+      console.log('Fetching stations...')
       
       try {
-        const response = await axios.get('http://localhost:5000/api/charging-stations')
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/charging-stations`)
         this.stations = response.data
         this.filteredStations = response.data
+        console.log('Stations fetched successfully:', response.data)
       } catch (err) {
         if (err.response) {
           if (err.response.status === 401) {
@@ -290,6 +292,7 @@ export default {
         } else {
           this.error = err.message || 'An unexpected error occurred'
         }
+        console.error('Error fetching stations:', err)
       } finally {
         this.loading = false
       }
@@ -298,7 +301,7 @@ export default {
       if (!this.checkAuth()) return
       
       try {
-        await axios.post(`http://localhost:5000/api/charging-stations/${station._id}/book`)
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/charging-stations/${station._id}/book`)
         await this.fetchStations() // Refresh the list
       } catch (err) {
         if (err.response) {
