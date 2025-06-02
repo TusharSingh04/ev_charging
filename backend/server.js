@@ -67,8 +67,8 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 // Routes
-const authRoutes = require('./routes/auth');
-const chargingStationRoutes = require('./routes/chargingStations');
+//const authRoutes = require('./routes/auth');
+//const chargingStationRoutes = require('./routes/chargingStations');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/charging-stations', chargingStationRoutes);
