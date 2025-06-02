@@ -41,7 +41,35 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Logging
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined'));
+} else {
+  app.use(morgan('dev'));
+}
+
+// Body Parser
+app.use(bodyParser.json());
+app.use(express.json());
+
+// MongoDB Connection with better options
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+
+.then(() => {
+  console.log('MongoDB connected successfully');
+})
+.catch((err) => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1);
+});
+
 // Routes
+const authRoutes = require('./routes/auth');
+const chargingStationRoutes = require('./routes/chargingStations');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/charging-stations', chargingStationRoutes);
 app.use('/api/admin', adminRoutes);
