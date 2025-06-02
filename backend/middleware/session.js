@@ -1,4 +1,4 @@
-const Session = require('../models/Session');
+import Session from '../models/Session.js';
 
 const sessionAuth = async (req, res, next) => {
   try {
@@ -26,4 +26,4 @@ const sessionAuth = async (req, res, next) => {
   }
 };
 
-module.exports = sessionAuth; 
+export default sessionAuth; 

@@ -1,15 +1,17 @@
-const express = require('express');
+import express from 'express';
+import ChargingStation from '../models/ChargingStation.js';
+import auth from '../middleware/auth.js';
+import admin from '../middleware/admin.js';
+
 const router = express.Router();
-const ChargingStation = require('../models/ChargingStation');
-const auth = require('../middleware/auth');
 
 // Helper function to convert UTC date to IST
 function toIST(date) {
   return new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
 }
 
-// Create a new charging station
-router.post('/', auth, async (req, res) => {
+// Create a new charging station (admin only)
+router.post('/', [auth, admin], async (req, res) => {
   try {
     const chargingStation = new ChargingStation(req.body);
     await chargingStation.save();
@@ -22,8 +24,8 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Get all charging stations
-router.get('/', auth, async (req, res) => {
+// Get all charging stations (public)
+router.get('/', async (req, res) => {
   try {
     const chargingStations = await ChargingStation.find({});
     const stationsWithIST = chargingStations.map(station => {
@@ -38,8 +40,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Get a specific charging station
-router.get('/:id', auth, async (req, res) => {
+// Get a specific charging station (public)
+router.get('/:id', async (req, res) => {
   try {
     const chargingStation = await ChargingStation.findById(req.params.id);
     if (!chargingStation) {
@@ -54,10 +56,10 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// Update a charging station
-router.patch('/:id', auth, async (req, res) => {
+// Update a charging station (admin only)
+router.patch('/:id', [auth, admin], async (req, res) => {
   const updates = Object.keys(req.body);
-  const allowedUpdates = ['name', 'latitude', 'longitude', 'status', 'powerOutput', 'connectorType'];
+  const allowedUpdates = ['name', 'address', 'latitude', 'longitude', 'status', 'powerOutput', 'connectorType', 'pricePerKWh', 'operatingHours', 'amenities'];
   const isValidOperation = updates.every(update => allowedUpdates.includes(update));
 
   if (!isValidOperation) {
@@ -81,8 +83,8 @@ router.patch('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete a charging station
-router.delete('/:id', auth, async (req, res) => {
+// Delete a charging station (admin only)
+router.delete('/:id', [auth, admin], async (req, res) => {
   try {
     const chargingStation = await ChargingStation.findByIdAndDelete(req.params.id);
     if (!chargingStation) {
@@ -97,7 +99,7 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Book a charging station
+// Book a charging station (authenticated user)
 router.post('/:id/book', auth, async (req, res) => {
   try {
     console.log(`Attempting to book station with ID: ${req.params.id}`);
@@ -126,8 +128,8 @@ router.post('/:id/book', auth, async (req, res) => {
   }
 });
 
-// Update charging station status (requires authentication)
-router.put('/:id/status', auth, async (req, res) => {
+// Update charging station status (admin only)
+router.put('/:id/status', [auth, admin], async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -139,12 +141,6 @@ router.put('/:id/status', auth, async (req, res) => {
 
     if (!chargingStation) {
       return res.status(404).json({ error: 'Charging station not found' });
-    }
-
-    // Validate if the requested status change is allowed (optional but recommended)
-    // For now, we allow changing to "available"
-    if (status !== 'available') {
-        return res.status(400).json({ error: 'Invalid status update' });
     }
 
     chargingStation.status = status;
@@ -160,4 +156,33 @@ router.put('/:id/status', auth, async (req, res) => {
   }
 });
 
-module.exports = router; 
+// Release charging station after use
+router.post('/:id/release', auth, async (req, res) => {
+  try {
+    const station = await ChargingStation.findById(req.params.id);
+    if (!station) {
+      return res.status(404).json({ error: 'Charging station not found' });
+    }
+
+    // Check if the station is currently in use
+    if (station.status !== 'in-use') {
+      return res.status(400).json({ error: 'Station is not currently in use' });
+    }
+
+    // Update station status to available
+    station.status = 'available';
+    station.currentUser = null;
+    station.lastUsed = new Date();
+    await station.save();
+
+    const obj = station.toObject();
+    obj.createdAt = toIST(obj.createdAt);
+    obj.updatedAt = toIST(obj.updatedAt);
+    obj.lastUsed = toIST(obj.lastUsed);
+    res.json(obj);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+export default router; 

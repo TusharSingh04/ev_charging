@@ -8,7 +8,7 @@
     <div class="details-content">
       <div class="detail-item">
         <span class="label">Status:</span>
-        <span :class="['status', station.status]">{{ station.status }}</span>
+        <span :class="['status', station.status]">{{ getStatusText(station.status) }}</span>
       </div>
       
       <div class="detail-item">
@@ -43,19 +43,31 @@
       </button>
       <button 
         v-else-if="station.status === 'in-use'" 
-        @click="makeAvailable"
-        class="action-btn in-use-btn"
+        @click="releaseStation"
+        class="action-btn release-btn"
         :disabled="loading"
       >
-        {{ loading ? 'Updating Status...' : 'Make Available' }}
+        {{ loading ? 'Releasing...' : 'Release Station' }}
+      </button>
+      <button 
+        v-else-if="isAdmin && station.status === 'maintenance'" 
+        @click="makeAvailable"
+        class="action-btn admin-btn"
+        :disabled="loading"
+      >
+        {{ loading ? 'Updating...' : 'Make Available' }}
       </button>
       <button 
         v-else 
         class="action-btn unavailable-btn"
         disabled
       >
-        Unavailable
+        {{ getStatusText(station.status) }}
       </button>
+    </div>
+
+    <div v-if="error" class="error-message">
+      {{ error }}
     </div>
   </div>
 </template>
@@ -73,10 +85,26 @@ export default {
   },
   data() {
     return {
-      loading: false
+      loading: false,
+      error: null
+    }
+  },
+  computed: {
+    isAdmin() {
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      return user.role === 'admin'
     }
   },
   methods: {
+    getStatusText(status) {
+      const statusMap = {
+        'maintenance': 'Under Maintenance',
+        'offline': 'Offline',
+        'in-use': 'In Use',
+        'available': 'Available'
+      }
+      return statusMap[status] || status
+    },
     async bookStation() {
       if (!this.checkAuth()) return
       
@@ -85,20 +113,20 @@ export default {
         await axios.post(`http://localhost:5000/api/charging-stations/${this.station._id}/book`)
         this.$emit('booking-success')
       } catch (err) {
-        if (err.response) {
-          if (err.response.status === 401) {
-            this.error = 'Session expired. Please login again.'
-            localStorage.removeItem('token')
-            localStorage.removeItem('user')
-            this.$router.push('/login')
-          } else {
-            alert(err.response.data.error || 'Failed to book charging station')
-          }
-        } else if (err.request) {
-          alert('Network Error - Please check your internet connection')
-        } else {
-          alert(err.message || 'An unexpected error occurred')
-        }
+        this.handleError(err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async releaseStation() {
+      if (!this.checkAuth()) return
+
+      this.loading = true
+      try {
+        await axios.post(`http://localhost:5000/api/charging-stations/${this.station._id}/release`)
+        this.$emit('status-updated')
+      } catch (err) {
+        this.handleError(err)
       } finally {
         this.loading = false
       }
@@ -106,27 +134,30 @@ export default {
     async makeAvailable() {
       if (!this.checkAuth()) return
 
-      this.loading = true;
+      this.loading = true
       try {
-        await axios.put(`http://localhost:5000/api/charging-stations/${this.station._id}/status`, { status: 'available' });
-        this.$emit('status-updated');
+        await axios.put(`http://localhost:5000/api/charging-stations/${this.station._id}/status`, { status: 'available' })
+        this.$emit('status-updated')
       } catch (err) {
-        if (err.response) {
-          if (err.response.status === 401) {
-            this.error = 'Session expired. Please login again.';
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            this.$router.push('/login');
-          } else {
-            alert(err.response.data.error || 'Failed to update station status');
-          }
-        } else if (err.request) {
-          alert('Network Error - Please check your internet connection');
-        } else {
-          alert(err.message || 'An unexpected error occurred');
-        }
+        this.handleError(err)
       } finally {
-        this.loading = false;
+        this.loading = false
+      }
+    },
+    handleError(err) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          this.error = 'Session expired. Please login again.'
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          this.$router.push('/login')
+        } else {
+          alert(err.response.data.error || 'Operation failed')
+        }
+      } else if (err.request) {
+        alert('Network Error - Please check your internet connection')
+      } else {
+        alert(err.message || 'An unexpected error occurred')
       }
     },
     checkAuth() {
@@ -244,25 +275,36 @@ export default {
   color: white;
 }
 
-.in-use-btn {
-  background: linear-gradient(45deg, #ff9800, #f57c00);
+.release-btn {
+  background: linear-gradient(45deg, #2196F3, #1976D2);
+  color: white;
+}
+
+.admin-btn {
+  background: linear-gradient(45deg, #9C27B0, #7B1FA2);
   color: white;
 }
 
 .unavailable-btn {
   background: linear-gradient(45deg, #9e9e9e, #757575);
   color: white;
+  cursor: not-allowed;
 }
 
 .action-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .action-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+}
+
+.error-message {
+  color: #f44336;
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
 }
 </style> 

@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "ev-charging-api",
 		"name": "EV Charging API",
-		"description": "API collection for EV Charging Station application",
+		"description": "API collection for EV Charging Station Management System",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -10,7 +10,7 @@
 			"name": "Authentication",
 			"item": [
 				{
-					"name": "Register",
+					"name": "Register User",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -21,19 +21,22 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/auth/register",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "auth", "register"]
+							"raw": "{{apiUrl}}/auth/register",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "register"]
 						}
 					}
 				},
 				{
-					"name": "Login",
+					"name": "Login User",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -44,24 +47,74 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/auth/login",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "auth", "login"]
+							"raw": "{{apiUrl}}/auth/login",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "login"]
 						}
 					}
-				}
-			]
-		},
-		{
-			"name": "Charging Stations",
-			"item": [
+				},
 				{
-					"name": "Create Station",
+					"name": "Admin Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@evcharging.com\",\n    \"password\": \"Admin@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/admin/login",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "admin", "login"]
+						}
+					}
+				},
+				{
+					"name": "Setup Admin (First Time Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@evcharging.com\",\n    \"password\": \"Admin@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/setup-admin",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "setup-admin"]
+						}
+					}
+				},
+				{
+					"name": "Create Admin (By Existing Admin)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -71,24 +124,61 @@
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}"
+								"value": "Bearer {{admin_token}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Downtown Station\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"status\": \"available\",\n    \"powerOutput\": 50,\n    \"connectorType\": \"Type 2\"\n}"
+							"raw": "{\n    \"email\": \"newadmin@evcharging.com\",\n    \"password\": \"Admin@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/charging-stations",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "charging-stations"]
+							"raw": "{{apiUrl}}/auth/create-admin",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "create-admin"]
 						}
 					}
 				},
 				{
-					"name": "Get All Stations",
+					"name": "Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/auth/me",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/auth/logout",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				},
+				{
+					"name": "Verify Role",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -98,41 +188,152 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/charging-stations",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "charging-stations"]
+							"raw": "{{apiUrl}}/auth/verify-role",
+							"host": ["{{apiUrl}}"],
+							"path": ["auth", "verify-role"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Charging Stations (Public)",
+			"item": [
+				{
+					"name": "Get All Charging Stations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/charging-stations",
+							"host": ["{{apiUrl}}"],
+							"path": ["charging-stations"]
 						}
 					}
 				},
 				{
-					"name": "Get Station by ID",
+					"name": "Get Specific Charging Station",
 					"request": {
 						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
+						"header": [],
 						"url": {
-							"raw": "http://localhost:5000/api/charging-stations/:id",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "charging-stations", ":id"],
+							"raw": "{{apiUrl}}/charging-stations/:id",
+							"host": ["{{apiUrl}}"],
+							"path": ["charging-stations", ":id"],
 							"variable": [
 								{
 									"key": "id",
-									"value": ""
+									"value": "{{station_id}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Charging Stations (Authenticated User)",
+			"item": [
+				{
+					"name": "Book Charging Station",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/charging-stations/:id/book",
+							"host": ["{{apiUrl}}"],
+							"path": ["charging-stations", ":id", "book"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{station_id}}"
 								}
 							]
 						}
 					}
 				},
 				{
-					"name": "Update Station",
+					"name": "Release Charging Station",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/charging-stations/:id/release",
+							"host": ["{{apiUrl}}"],
+							"path": ["charging-stations", ":id", "release"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{station_id}}"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Charging Stations",
+			"item": [
+				{
+					"name": "Create Charging Station",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New Admin Station\",\n    \"address\": \"123 Admin St\",\n    \"latitude\": 34.0522,\n    \"longitude\": -118.2437,\n    \"chargingType\": \"Type 2\",\n    \"connectorType\": \"J1772\",\n    \"powerOutput\": 7.7,\n    \"pricePerKWh\": 0.40,\n    \"operatingHours\": \"24/7\",\n    \"amenities\": [\"Wifi\", \"Restroom\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/admin/stations",
+							"host": ["{{apiUrl}}"],
+							"path": ["admin", "stations"]
+						}
+					}
+				},
+				{
+					"name": "Get All Charging Stations (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/admin/stations",
+							"host": ["{{apiUrl}}"],
+							"path": ["admin", "stations"]
+						}
+					}
+				},
+				{
+					"name": "Update Charging Station (Admin)",
 					"request": {
 						"method": "PATCH",
 						"header": [
@@ -142,54 +343,97 @@
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}"
+								"value": "Bearer {{admin_token}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"status\": \"in-use\"\n}"
+							"raw": "{\n    \"name\": \"Updated Admin Station\",\n    \"address\": \"456 Admin Ave\",\n    \"latitude\": 34.0522,\n    \"longitude\": -118.2437,\n    \"status\": \"maintenance\",\n    \"powerOutput\": 100,\n    \"connectorType\": \"CHAdeMO\",\n    \"pricePerKWh\": 0.50,\n    \"operatingHours\": \"8 AM - 8 PM\",\n    \"amenities\": [\"Parking\", \"Food\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
 						"url": {
-							"raw": "http://localhost:5000/api/charging-stations/:id",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "charging-stations", ":id"],
+							"raw": "{{apiUrl}}/admin/stations/:id",
+							"host": ["{{apiUrl}}"],
+							"path": ["admin", "stations", ":id"],
 							"variable": [
 								{
 									"key": "id",
-									"value": ""
+									"value": "{{station_id}}"
 								}
 							]
 						}
 					}
 				},
 				{
-					"name": "Delete Station",
+					"name": "Delete Charging Station (Admin)",
 					"request": {
 						"method": "DELETE",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}"
+								"value": "Bearer {{admin_token}}"
 							}
 						],
 						"url": {
-							"raw": "http://localhost:5000/api/charging-stations/:id",
-							"protocol": "http",
-							"host": ["localhost"],
-							"port": "5000",
-							"path": ["api", "charging-stations", ":id"],
+							"raw": "{{apiUrl}}/admin/stations/:id",
+							"host": ["{{apiUrl}}"],
+							"path": ["admin", "stations", ":id"],
 							"variable": [
 								{
 									"key": "id",
-									"value": ""
+									"value": "{{station_id}}"
 								}
 							]
 						}
 					}
 				}
 			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "apiUrl",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		},
+		{
+			"key": "user_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "station_id",
+			"value": "",
+			"type": "string"
 		}
 	]
 } 

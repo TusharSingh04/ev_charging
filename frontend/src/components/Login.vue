@@ -1,308 +1,120 @@
 <template>
   <div class="login-container">
-    <form v-if="isLogin" @submit.prevent="handleLogin" class="login-form">
+    <div class="login-form">
       <h2>Login</h2>
-      <div class="form-group">
-        <label for="email">Email:</label>
-        <input 
-          type="email" 
-          id="email" 
-          v-model="email" 
-          required 
-          placeholder="Enter your email"
-          :disabled="loading"
-          :class="{ 'error-input': validationErrors.email }"
-        >
-        <span v-if="validationErrors.email" class="validation-error">
-          {{ validationErrors.email }}
-        </span>
-      </div>
-      <div class="form-group">
-        <label for="password">Password:</label>
-        <input 
-          type="password" 
-          id="password" 
-          v-model="password" 
-          required 
-          placeholder="Enter your password"
-          :disabled="loading"
-          :class="{ 'error-input': validationErrors.password }"
-        >
-        <span v-if="validationErrors.password" class="validation-error">
-          {{ validationErrors.password }}
-        </span>
-      </div>
-      <button type="submit" class="login-btn" :disabled="loading">
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
-      <div v-if="error" class="error">
-        <p>{{ error }}</p>
-      </div>
-      <p class="toggle-form-text">Don't have an account? <a href="#" @click.prevent="toggleForm">Register here</a></p>
-    </form>
+      <form @submit.prevent="handleSubmit">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            required
+            placeholder="Enter your email"
+          />
+        </div>
 
-    <form v-else @submit.prevent="handleRegister" class="register-form">
-      <h2>Register</h2>
-      <div class="form-group">
-        <label for="register-email">Email:</label>
-        <input 
-          type="email" 
-          id="register-email" 
-          v-model="registerEmail" 
-          required 
-          placeholder="Enter your email"
-          :disabled="loading"
-          :class="{ 'error-input': validationErrors.registerEmail }"
-        >
-        <span v-if="validationErrors.registerEmail" class="validation-error">
-          {{ validationErrors.registerEmail }}
-        </span>
-      </div>
-      <div class="form-group">
-        <label for="register-password">Password:</label>
-        <input 
-          type="password" 
-          id="register-password" 
-          v-model="registerPassword" 
-          required 
-          placeholder="Enter your password"
-          :disabled="loading"
-          :class="{ 'error-input': validationErrors.registerPassword }"
-        >
-        <span v-if="validationErrors.registerPassword" class="validation-error">
-          {{ validationErrors.registerPassword }}
-        </span>
-      </div>
-      <div class="form-group">
-        <label for="register-confirm-password">Confirm Password:</label>
-        <input 
-          type="password" 
-          id="register-confirm-password" 
-          v-model="registerConfirmPassword" 
-          required 
-          placeholder="Confirm your password"
-          :disabled="loading"
-          :class="{ 'error-input': validationErrors.registerConfirmPassword }"
-        >
-        <span v-if="validationErrors.registerConfirmPassword" class="validation-error">
-          {{ validationErrors.registerConfirmPassword }}
-        </span>
-      </div>
-      <button type="submit" class="register-btn" :disabled="loading">
-        {{ loading ? 'Registering...' : 'Register' }}
-      </button>
-      <div v-if="error" class="error">
-        <p>{{ error }}</p>
-      </div>
-      <p class="toggle-form-text">Already have an account? <a href="#" @click.prevent="toggleForm">Login here</a></p>
-    </form>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            required
+            placeholder="Enter your password"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" v-model="selectedRole" required>
+            <option value="">Select Role</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div v-if="error" class="error-message">
+          {{ error }}
+        </div>
+
+        <button type="submit" :disabled="loading">
+          {{ loading ? 'Logging in...' : 'Login' }}
+        </button>
+
+        <div class="register-link">
+          New User? <router-link to="/register">Register</router-link>
+        </div>
+
+        <div v-if="successMessage" class="success-message">
+          {{ successMessage }}
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import axios from 'axios';
+import config from '../config';
 
 export default {
   name: 'Login',
-  props: {
-    initialMode: {
-      type: String,
-      default: 'login'
-    }
-  },
   data() {
     return {
-      isLogin: this.initialMode === 'login',
       email: '',
       password: '',
-      registerEmail: '',
-      registerPassword: '',
-      registerConfirmPassword: '',
-      error: null,
+      selectedRole: '',
       loading: false,
-      validationErrors: {
-        email: '',
-        password: '',
-        registerEmail: '',
-        registerPassword: '',
-        registerConfirmPassword: ''
-      }
-    }
+      error: null,
+      successMessage: null
+    };
   },
-  watch: {
-    initialMode(newMode) {
-      this.isLogin = newMode === 'login'
+  created() {
+    // Check for success message in route query
+    if (this.$route.query.message) {
+      this.successMessage = this.$route.query.message;
     }
   },
   methods: {
-    toggleForm() {
-      this.isLogin = !this.isLogin
-      this.error = null
-      this.validationErrors = {
-        email: '',
-        password: '',
-        registerEmail: '',
-        registerPassword: '',
-        registerConfirmPassword: ''
-      }
-      // Update route when toggling form
-      const newRoute = this.isLogin ? '/login' : '/register'
-      this.$router.push(newRoute)
-    },
-    validateLoginForm() {
-      let isValid = true
-      this.validationErrors = {
-        email: '',
-        password: ''
-      }
-
-      // Validate email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!this.email) {
-        this.validationErrors.email = 'Email is required'
-        isValid = false
-      } else if (!emailRegex.test(this.email)) {
-        this.validationErrors.email = 'Please enter a valid email address'
-        isValid = false
-      }
-
-      // Validate password
-      if (!this.password) {
-        this.validationErrors.password = 'Password is required'
-        isValid = false
-      } else if (this.password.length < 6) {
-        this.validationErrors.password = 'Password must be at least 6 characters long'
-        isValid = false
-      }
-
-      return isValid
-    },
-    validateRegisterForm() {
-      let isValid = true
-      this.validationErrors = {
-        registerEmail: '',
-        registerPassword: '',
-        registerConfirmPassword: ''
-      }
-
-      // Validate email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!this.registerEmail) {
-        this.validationErrors.registerEmail = 'Email is required'
-        isValid = false
-      } else if (!emailRegex.test(this.registerEmail)) {
-        this.validationErrors.registerEmail = 'Please enter a valid email address'
-        isValid = false
-      }
-
-      // Validate password
-      if (!this.registerPassword) {
-        this.validationErrors.registerPassword = 'Password is required'
-        isValid = false
-      } else if (this.registerPassword.length < 6) {
-        this.validationErrors.registerPassword = 'Password must be at least 6 characters long'
-        isValid = false
-      }
-
-      // Validate confirm password
-      if (!this.registerConfirmPassword) {
-        this.validationErrors.registerConfirmPassword = 'Confirm Password is required'
-        isValid = false
-      } else if (this.registerPassword !== this.registerConfirmPassword) {
-        this.validationErrors.registerConfirmPassword = 'Passwords do not match'
-        isValid = false
-      }
-
-      return isValid
-    },
-    async handleLogin() {
-      if (!this.validateLoginForm()) {
-        return
-      }
-
-      this.loading = true
-      this.error = null
-      
-      try {
-        const response = await axios.post('http://localhost:5000/api/auth/login', {
-          email: this.email,
-          password: this.password
-        })
-        
-        // Store the token and user info
-        localStorage.setItem('token', response.data.token)
-        if (response.data.user) {
-          localStorage.setItem('user', JSON.stringify(response.data.user))
-        }
-        
-        // Set up axios default headers
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
-        
-        // Redirect to charger list
-        this.$router.push('/chargers')
-      } catch (err) {
-        if (err.response) {
-          // Server responded with an error
-          if (err.response.status === 401) {
-            this.error = 'Invalid email or password'
-          } else {
-            this.error = err.response.data.error || 'Login failed'
-          }
-        } else if (err.request) {
-          // Request was made but no response received
-          this.error = 'Network Error - Please check your internet connection'
-        } else {
-          // Something else happened
-          this.error = err.message || 'An unexpected error occurred'
-        }
-      } finally {
-        this.loading = false
-      }
-    },
-    async handleRegister() {
-      if (!this.validateRegisterForm()) {
-        return
-      }
-
+    async handleSubmit() {
       this.loading = true;
       this.error = null;
 
       try {
-        // Assuming a backend endpoint for registration exists at /api/auth/register
-        const response = await axios.post('http://localhost:5000/api/auth/register', {
-          email: this.registerEmail,
-          password: this.registerPassword
+        // First, authenticate the user
+        const authResponse = await axios.post(`${config.apiUrl}/auth/login`, {
+          email: this.email,
+          password: this.password,
+          role: this.selectedRole
         });
 
-        // Handle successful registration (e.g., show a success message, clear form, or automatically log in)
-        console.log('Registration successful:', response.data);
-        this.error = 'Registration successful. You can now login.';
-        this.toggleForm(); // Switch back to login form after successful registration
-        this.registerEmail = '';
-        this.registerPassword = '';
-        this.registerConfirmPassword = '';
+        const { token, user } = authResponse.data;
 
-      } catch (err) {
-        if (err.response) {
-          // Server responded with an error
-          if (err.response.status === 400 && err.response.data.error === 'User already exists') {
-            this.error = 'User with this email already exists.';
-          } else {
-            this.error = err.response.data.error || 'Registration failed.';
-          }
-        } else if (err.request) {
-          // Request was made but no response received
-          this.error = 'Network Error - Please check your internet connection.';
+        // Store the token and user info
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('userRole', user.role);
+
+        // Redirect based on role
+        if (user.role === 'admin') {
+          this.$router.push('/admin/dashboard');
         } else {
-          // Something else happened
-          this.error = err.message || 'An unexpected error occurred during registration.';
+          this.$router.push('/user/dashboard');
         }
+      } catch (error) {
+        console.error('Login error:', error);
+        this.error = error.response?.data?.error || error.message || 'Login failed';
+        // Clear any stored data on error
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
       } finally {
         this.loading = false;
       }
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -310,115 +122,107 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 64px); /* Subtract navbar height */
-  background-color: transparent; /* Make background transparent */
+  min-height: 100vh;
+  background-color: transparent;
 }
 
-.login-form,
-.register-form {
-  background: none; /* Remove white background */
+.login-form {
+  background: #7F8C8D; /* Steel grey background */
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: none; /* Remove shadow */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
-  color: #000000; /* Change to black for better contrast */
-  text-align: center; /* Center form content */
 }
 
-.login-form h2,
-.register-form h2 {
-  color: #000000; /* Change to black for better contrast */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Add text shadow */
+h2 {
+  text-align: center;
+  color: #2c3e50; /* Slightly darker color */
   margin-bottom: 1.5rem;
+  font-weight: bold; /* Make title bolder */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add text shadow */
 }
 
 .form-group {
   margin-bottom: 1rem;
-  text-align: left; /* Align form group content to left */
 }
 
 label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #000000; /* Change to black for better contrast */
-  font-weight: bold; /* Make text bold */
+  color: #333; /* Slightly darker color for labels */
+  font-weight: bold; /* Make labels bolder */
+  text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.3); /* Add subtle text shadow */
 }
 
-input {
+input, select {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
-  color: #000000; /* Change to black for better contrast */
-  font-weight: bold; /* Make text bold */
 }
 
-input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
+input:focus, select:focus {
+  outline: none;
+  border-color: #4CAF50;
 }
 
-.login-btn,
-.register-btn {
+button {
   width: 100%;
   padding: 0.75rem;
-  background-color: #4CAF50;
-  color: white; /* Keep button text white for contrast */
+  background-color: #2E7D32; /* Darker shade of green */
+  color: white;
   border: none;
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
-  font-weight: bold; /* Make button text bold */
-  margin-top: 1.5rem; /* Add space above button */
 }
 
-.login-btn:hover:not(:disabled),
-.register-btn:hover:not(:disabled) {
-  background-color: #45a049;
+button:hover {
+  background-color: #1B5E20; /* Even darker green on hover */
 }
 
-.login-btn:disabled,
-.register-btn:disabled {
+button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
 
-.error {
-  color: #dc3545;
-  margin-top: 1rem;
+.error-message {
+  color: #ff5252;
   text-align: center;
+  margin-bottom: 1rem;
   padding: 0.5rem;
-  background-color: #f8d7da;
+  background-color: #ffebee;
   border-radius: 4px;
 }
 
-.error-input {
-  border-color: #dc3545 !important;
+.register-link {
+  text-align: center;
+  margin-top: 1rem;
+  color: #333; /* Slightly darker color for surrounding text */
+  font-weight: bold; /* Make surrounding text bolder */
+  text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.3); /* Add subtle text shadow */
 }
 
-.validation-error {
-  color: #dc3545;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-  display: block;
-}
-
-.toggle-form-text {
-  margin-top: 1.5rem;
-  font-size: 0.9rem;
-  color: #000000; /* Change to black for better contrast */
-}
-
-.toggle-form-text a {
-  color: #2E7D32; /* Darker green for better contrast */
+.register-link a {
+  color: #1a237e; /* Darker blue color for the link */
   text-decoration: none;
-  font-weight: bold;
+  font-weight: bold; /* Make link text bolder */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4); /* Add text shadow to link */
 }
 
-.toggle-form-text a:hover {
+.register-link a:hover {
   text-decoration: underline;
+}
+
+.success-message {
+  color: #4CAF50;
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: #e8f5e9;
+  border-radius: 4px;
 }
 </style> 

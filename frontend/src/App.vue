@@ -4,6 +4,7 @@
     <div class="background-layer background-layer-2"></div>
     <Navbar />
     <main class="main-content">
+      <router-view name="navigation"></router-view>
       <router-view></router-view>
     </main>
   </div>
@@ -116,6 +117,7 @@ export default {
 .main-content {
   flex: 1;
   padding: 20px;
+  padding-top: 30px; /* Add padding equal to desktop navbar height */
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -155,6 +157,7 @@ nav a.router-link-exact-active {
 @media (max-width: 768px) {
   .main-content {
     padding: 10px;
+    padding-top: 50px; /* Adjust padding for mobile navbar height */
   }
 }
 

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const sessionSchema = new mongoose.Schema({
   userId: {
@@ -33,4 +33,4 @@ sessionSchema.index({ token: 1 });
 
 const Session = mongoose.model('Session', sessionSchema);
 
-module.exports = Session; 
+export default Session; 

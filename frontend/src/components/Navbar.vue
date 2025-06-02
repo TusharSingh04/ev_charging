@@ -1,23 +1,40 @@
 <template>
   <nav class="navbar" :class="{ 'mobile': isMobile }">
-    <div class="nav-brand">
-      <router-link to="/">EV Charging</router-link>
+    <div class="navbar-container">
+      <!-- Left side - Brand -->
+      <div class="navbar-brand">
+        <router-link to="/" class="brand-link">
+          <span class="brand-text">EV Charging</span>
+        </router-link>
+      </div>
+
+      <!-- Mobile menu button -->
+      <button v-if="isMobile" class="menu-toggle" @click="toggleMobileMenu" :class="{ 'active': showMobileMenu }">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Right side - Navigation -->
+      <div class="navbar-menu" :class="{ 'show': showMobileMenu }">
+        <!-- Auth Buttons -->
+        <div class="auth-buttons">
+          <template v-if="!isLoggedIn">
+            <router-link to="/login" class="auth-btn login-btn" @click="closeMobileMenu">
+              Log in
+            </router-link>
+            <router-link to="/register" class="auth-btn register-btn" @click="closeMobileMenu">
+              Sign up
+            </router-link>
+          </template>
+          <template v-else>
+            <button @click="logout" class="auth-btn logout-btn">
+              Log out
+            </button>
+          </template>
+        </div>
+      </div>
     </div>
-    <div class="nav-links" :class="{ 'mobile-menu': isMobile, 'show': showMobileMenu }">
-      <template v-if="isAuthenticated && !isAuthPage">
-        <router-link to="/chargers" @click="closeMobileMenu">Charging Stations</router-link>
-        <a href="#" @click.prevent="handleLogout" class="logout-btn" @click="closeMobileMenu">Logout</a>
-      </template>
-      <template v-else-if="!isAuthPage">
-        <router-link to="/login" @click="closeMobileMenu">Login</router-link>
-      </template>
-      <a href="#" class="help-btn" @click.prevent="closeMobileMenu">Need Help</a>
-    </div>
-    <button v-if="isMobile" class="menu-toggle" @click="toggleMobileMenu">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
   </nav>
 </template>
 
@@ -31,92 +48,132 @@ export default {
     }
   },
   computed: {
-    isAuthenticated() {
-      return !!localStorage.getItem('token')
-    },
-    isAuthPage() {
-      return this.$route.path === '/login'
+    isLoggedIn() {
+      return this.$store.getters.isLoggedIn;
     }
   },
   methods: {
-    handleLogout() {
-      localStorage.removeItem('token')
-      this.$router.push('/login')
+    logout() {
+      this.$store.dispatch('logout');
+      this.$router.push('/login');
+      this.closeMobileMenu();
     },
     checkMobile() {
-      this.isMobile = window.innerWidth <= 768
+      this.isMobile = window.innerWidth <= 768;
       if (!this.isMobile) {
-        this.showMobileMenu = false
+        this.showMobileMenu = false;
       }
     },
     toggleMobileMenu() {
-      this.showMobileMenu = !this.showMobileMenu
+      this.showMobileMenu = !this.showMobileMenu;
     },
     closeMobileMenu() {
-      this.showMobileMenu = false
+      this.showMobileMenu = false;
     }
   },
   mounted() {
-    this.checkMobile()
-    window.addEventListener('resize', this.checkMobile)
+    this.checkMobile();
+    window.addEventListener('resize', this.checkMobile);
   },
   beforeUnmount() {
-    window.removeEventListener('resize', this.checkMobile)
+    window.removeEventListener('resize', this.checkMobile);
   }
 }
 </script>
 
 <style scoped>
 .navbar {
-  background-color: rgba(44, 62, 80, 0.9);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background-color: #7F8C8D; /* Steel grey background */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  backdrop-filter: blur(10px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
-.nav-brand a {
-  color: white;
-  text-decoration: none;
-  font-size: 1.5rem;
-  font-weight: bold;
-  transition: color 0.3s ease;
-}
-
-.nav-brand a:hover {
-  color: #3498db;
-}
-
-.nav-links {
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  height: 30px; /* Reduced height */
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Brand Styles */
+.navbar-brand {
+  display: flex;
   align-items: center;
 }
 
-.nav-links a {
-  color: white;
+.brand-link {
   text-decoration: none;
-  padding: 0.5rem 1rem;
+}
+
+.brand-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Navigation Menu */
+.navbar-menu {
+  display: flex;
+  align-items: center;
+}
+
+/* Auth Buttons */
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.auth-btn {
+  padding: 0.5rem 1.25rem;
   border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
   transition: all 0.3s ease;
 }
 
-.nav-links a:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+.login-btn {
+  color: white;
+  background-color: transparent;
+  border: 1px solid white;
+}
+
+.login-btn:hover {
+  background-color: #3273dc;
+  color: white;
+  border-color: #3273dc;
+}
+
+.register-btn {
+  color: white;
+  background-color: transparent;
+  border: 1px solid white;
+}
+
+.register-btn:hover {
+  background-color: #3273dc;
+  border-color: #3273dc;
 }
 
 .logout-btn {
-  background-color: #e74c3c;
+  color: white;
+  background-color: transparent;
+  border: 1px solid white;
+  cursor: pointer;
 }
 
 .logout-btn:hover {
-  background-color: #c0392b;
+  background-color: #dc3545;
+  color: white;
 }
 
+/* Mobile Menu Button */
 .menu-toggle {
   display: none;
   flex-direction: column;
@@ -127,67 +184,69 @@ export default {
   border: none;
   cursor: pointer;
   padding: 0;
+  z-index: 1001;
 }
 
 .menu-toggle span {
   width: 100%;
-  height: 3px;
-  background-color: white;
-  border-radius: 3px;
+  height: 2px;
+  background-color: #ffffff;
+  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
-.help-btn {
-  background-color: #3498db;
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+.menu-toggle.active span:nth-child(1) {
+  transform: translateY(9px) rotate(45deg);
 }
 
-.help-btn:hover {
-  background-color: #2980b9;
+.menu-toggle.active span:nth-child(2) {
+  opacity: 0;
 }
 
+.menu-toggle.active span:nth-child(3) {
+  transform: translateY(-9px) rotate(-45deg);
+}
+
+/* Mobile Styles */
 @media (max-width: 768px) {
-  .navbar {
-    padding: 1rem;
+  .navbar-container {
+    padding: 0 1rem;
+    height: 50px;
   }
 
   .menu-toggle {
     display: flex;
   }
 
-  .nav-links {
+  .navbar-menu {
     display: none;
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    top: 50px;
     left: 0;
     right: 0;
-    background-color: rgba(44, 62, 80, 0.95);
+    background-color: white;
     padding: 1rem;
     flex-direction: column;
     gap: 1rem;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
-  .nav-links.mobile-menu {
+  .navbar-menu.show {
     display: flex;
   }
 
-  .nav-links.show {
-    display: flex;
+  .auth-buttons {
+    flex-direction: column;
+    width: 100%;
   }
 
-  .nav-links a {
+  .auth-btn {
     width: 100%;
     text-align: center;
-    padding: 0.75rem;
   }
 
-  .nav-brand a {
-    font-size: 1.2rem;
+  .brand-text {
+    font-size: 1.25rem;
   }
 }
 </style> 

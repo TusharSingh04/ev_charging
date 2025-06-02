@@ -1,47 +1,131 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import axios from 'axios'
+import config from '../config'
 import Login from '../components/Login.vue'
-import ChargerList from '../components/ChargerList.vue'
+import Register from '../components/Register.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
+import UserDashboard from '../components/UserDashboard.vue'
+import CreateStation from '../components/admin/CreateStation.vue'
+import UpdateStation from '../components/admin/UpdateStation.vue'
+import DeleteStation from '../components/admin/DeleteStation.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    redirect: '/login'
   },
   {
     path: '/login',
-    name: 'login',
-    component: Login
+    name: 'Login',
+    component: Login,
+    meta: { requiresAuth: false }
   },
   {
     path: '/register',
-    name: 'register',
-    component: Login,
-    props: { initialMode: 'register' }
+    name: 'Register',
+    component: Register,
+    meta: { requiresAuth: false }
   },
   {
-    path: '/chargers',
-    name: 'chargers',
-    component: ChargerList,
-    meta: { requiresAuth: true }
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/user/dashboard',
+    name: 'UserDashboard',
+    component: UserDashboard,
+    meta: { requiresAuth: true, requiresAdmin: false }
+  },
+  {
+    path: '/admin/stations/create',
+    name: 'CreateStation',
+    component: CreateStation,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/stations/update/:id',
+    name: 'UpdateStation',
+    component: UpdateStation,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/stations/delete',
+    name: 'DeleteStation',
+    component: DeleteStation,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(),
   routes
 })
 
 // Navigation guard
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = !!localStorage.getItem('token')
+router.beforeEach(async (to, from, next) => {
+  const token = localStorage.getItem('token')
   
-  if (to.meta.requiresAuth && !isAuthenticated) {
+  // If route requires auth and no token, redirect to login
+  if (to.meta.requiresAuth && !token) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  // If user is logged in and tries to access login page, verify role and redirect
+  if (to.path === '/login' && token) {
+    try {
+      const response = await axios.get(`${config.apiUrl}/auth/verify-role`, {
+        headers: {
+          ...config.headers,
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      const { role } = response.data
+      localStorage.setItem('userRole', role)
+      next(role === 'admin' ? '/admin/dashboard' : '/user/dashboard')
+    } catch (error) {
+      // If token is invalid or expired, clear storage and redirect to login
+      localStorage.removeItem('token')
+      localStorage.removeItem('userRole')
+      next('/login')
+    }
+    return
+  }
+
+  // For protected routes, verify role from backend
+  if (to.meta.requiresAuth) {
+    try {
+      const response = await axios.get(`${config.apiUrl}/auth/verify-role`, {
+        headers: {
+          ...config.headers,
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      const { role } = response.data
+      localStorage.setItem('userRole', role)
+
+      // Check if user has required role for the route
+      if (to.meta.requiresAdmin && role !== 'admin') {
+        next('/user/dashboard')
+      } else if (!to.meta.requiresAdmin && role === 'admin') {
+        next('/admin/dashboard')
+      } else {
+        next()
+      }
+    } catch (error) {
+      // If token is invalid or expired, clear storage and redirect to login
+      localStorage.removeItem('token')
+      localStorage.removeItem('userRole')
+      next('/login')
+    }
+    return
+  }
+
+  next()
 })
 
 export default router 
